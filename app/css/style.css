@@ -142,3 +142,8 @@ nav ul li p {
 .btn:focus {
 	outline: 0;
 }
+
+.developer {
+	font-size: 10px;
+	margin-top: 5px;
+}

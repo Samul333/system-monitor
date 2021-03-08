@@ -25,8 +25,10 @@
 					<li><strong>Memory Free: </strong><span id="mem-free"></span></li>
 					<li><strong>Memory Used Percantage: </strong><span id="mem-used-percent"></span></li>
 
+
 				</ul>
 				<div id="cpu-model"></div>
+				<div class="developer"><em>Developed By: Samul Shrestha </em></div>
 			</div>
 			<div class="content">
 				<h1><i class="fas fa-info"></i> System Info</h1>
@@ -48,6 +50,11 @@
 					<div class="form-control">
 						<label for="alert-frequency">Alert Frequency (In Minutes)</label>
 						<input type="number" id="alert-frequency" />
+					</div>
+
+					<div class="form-control">
+						<label for="mem-overload">Memory Overload Warning %</label>
+						<input type="number" id="mem-overload" />
 					</div>
 					<input type="submit" value="Submit" class="btn" />
 			</div>
@@ -72,6 +79,33 @@
 
 		<script src="js/tabs.js"></script>
 		<script src="js/monitor.js"></script>
+		<script>
+			const settingsForm = document.getElementById('settings-form');
+			//Get the default settings
 
+			ipcRenderer.on('settings:get',(e,settings)=>{
+				document.getElementById('cpu-overload').value  = settings.cpuOverload;
+				document.getElementById('alert-frequency').value = settings.alertFrequency;
+				document.getElementById('mem-overload').value = settings.memOverload;
+			})
+
+			//Submit the settings
+
+			settingsForm.addEventListener('submit',e=>{
+				e.preventDefault();
+				const cpuOverload = document.getElementById('cpu-overload').value;
+				const alertFrequency = document.getElementById('alert-frequency').value;
+				const memOverload = document.getElementById('mem-overload').value
+				//Send the settings to the main proces
+
+				ipcRenderer.send('settings:set',{
+					cpuOverload,
+					alertFrequency,
+					memOverload
+				})
+			})
+
+
+		</script>
 	</body>
 </html>

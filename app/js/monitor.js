@@ -1,9 +1,21 @@
 const path = require('path');
 const osu = require('node-os-utils');
-
+const {ipcRenderer} = require('electron');
 const cpu = osu.cpu;
 const mem = osu.mem;
 const os = osu.os;
+
+let cpuOverload;
+let alertFrequency;
+let memOverload;
+
+//Get the settings
+
+ipcRenderer.on('settings:get',(e,settings)=>{
+    cpuOverload =+settings.cpuOverload;
+    alertFrequency = +settings.alertFrequency;
+    memOverload = +settings.memOverload;
+})
 
 //Run every this amout of seconds
 
@@ -16,6 +28,24 @@ setInterval(()=>{
     
     mem.used().then(info=>{
         const usedPercent = (info.usedMemMb/info.totalMemMb)*100; 
+
+        if(usedPercent > memOverload && runNotify(alertFrequency)){
+            const myNotification = new Notification('Danger', {
+                body: 'Memory use has exceded more than 80%'
+              })
+        }
+        
+        if(usedPercent> memOverload){
+        document.getElementById('mem-progress').style.backgroundColor = 'red';
+            
+        }
+
+
+        else{
+        document.getElementById('mem-progress').style.backgroundColor = '#30c88b';
+
+        }
+
         document.getElementById('mem-used-percent').innerText = Math.floor(usedPercent) + '%'; 
         document.getElementById('mem-usage').innerText = info.usedMemMb +'mb';
         document.getElementById('mem-progress').style.width = usedPercent + '%';
@@ -25,9 +55,25 @@ setInterval(()=>{
 
     cpu.usage().then(info=>{
       
-        document.getElementById('cpu-usage').innerText = info +'%'
+        document.getElementById('cpu-usage').innerText = (+info).toFixed(2) +'%'
         document.getElementById('cpu-progress').style.width = info +'%';
         
+        if(info> cpuOverload){
+            document.getElementById('cpu-progress').style.backgroundColor='red';
+        }
+        else{
+            document.getElementById('cpu-progress').style.backgroundColor='#30c88b';
+
+        }
+
+        if(info>=cpuOverload && runNotify(alertFrequency)){
+
+     
+            const myNotification = new Notification('Danger', {
+                body: 'The notification is active'
+              })
+           }
+
     })
 
     cpu.free().then(info=>{
@@ -42,9 +88,36 @@ setInterval(()=>{
 
  
 
+ 
+
 },3000)
 
 
+//Check how much time has paased;
+
+function runNotify(frequency){
+    if(localStorage.getItem('lastNotify')===null){
+        // Store Timestamp
+
+        localStorage.setItem('lastNotify', +new Date())
+
+        return true;
+    }
+
+    const notifyTime = new Date(parseInt(localStorage.getItem('lastNotify')))
+    const now = new Date();
+    const diffTime = Math.abs(now - notifyTime);
+    const minutesPassed = Math.ceil(diffTime/(1000*60));
+
+    if(minutesPassed>frequency){
+        localStorage.setItem('lastNotify', +new Date())
+        return true;
+    }
+
+    else{
+        return false;
+    }
+}
 
 function secondsToDhms(seconds){
         seconds = +seconds;
@@ -54,6 +127,16 @@ function secondsToDhms(seconds){
         const s = Math.floor(seconds %60);
 
         return `${d}d,${h}h,${m}m,${s}seconds`;
+
+}
+
+
+function showNotification(percent,overload){
+    if(percent < overload) return;
+
+    const myNotification = new Notification('Danger', {
+        body: 'The notification is active'
+      })
 
 }
 
@@ -73,3 +156,4 @@ document.getElementById('os').innerText = `${os.type()} ${os.arch()}`
 mem.info().then(info=>{
     document.getElementById('mem-total').innerText= info.totalMemMb;
 })
+
